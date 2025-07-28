@@ -51,9 +51,12 @@ for _, row in df.iterrows():
         icon=folium.Icon(color=row["MarkerColor"])
     ).add_to(marker_cluster)
 
-# --- Display the map ---
-st_data = st_folium(m, width=1200, height=600)
+# --- Display map with full width ---
+st_data = st_folium(m, use_container_width=True, height=600)
 
-# --- Display the data table ---
-st.subheader("📋 List of Companies in the Cocoa Supply Chain")
-st.dataframe(df.drop(columns=["MarkerColor"]))
+# --- Spacer to avoid excessive white space ---
+st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
+
+# --- Table just below the map ---
+st.dataframe(df.drop(columns=["MarkerColor"]), use_container_width=True)
+

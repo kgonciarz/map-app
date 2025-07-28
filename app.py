@@ -5,7 +5,7 @@ from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 
 st.set_page_config(layout="wide")
-st.title("🌍 Cocoa Supply Chain Actors Map (Folium)")
+st.title("🌍 Cocoa Supply Chain Actors Map")
 st.write("Real geographic map of cocoa companies with interactive colored markers by role.")
 
 # --- Load Excel data ---

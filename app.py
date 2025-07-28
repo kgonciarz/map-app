@@ -80,7 +80,17 @@ st_data = st_folium(m, use_container_width=True, height=600)
 
 # --- Spacer to avoid excessive white space ---
 st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
+df["Volume (formatted)"] = df["Volume (tons/year)"].apply(
+    lambda x: f"{int(x):,}" if pd.notnull(x) and isinstance(x, (int, float)) else x
+)
 
 # --- Table just below the map ---
 st.dataframe(df.drop(columns=["MarkerColor"]), use_container_width=True)
+st.dataframe(
+    df[[
+        "Company", "Role", "Country", "City", "Contact Email", 
+        "Volume (formatted)", "Latitude", "Longitude", "Notes"
+    ]],
+    use_container_width=True
+)
 

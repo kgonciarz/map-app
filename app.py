@@ -54,15 +54,21 @@ m.get_root().html.add_child(folium.Element(legend_html))
 
 marker_cluster = MarkerCluster().add_to(m)
 
-# --- Add markers to map ---
 for _, row in df.iterrows():
+    # Format volume with commas
+    try:
+        volume_formatted = f"{int(row['Volume (tons/year)']):,}"
+    except:
+        volume_formatted = row['Volume (tons/year)']  # fallback if it's not a number
+
     popup_html = f"""
     <b>{row['Company']}</b><br>
     Role: {row['Role']}<br>
     Location: {row['City']}, {row['Country']}<br>
-    Volume: {row['Volume (tons/year)']} tons<br>
+    Volume: {volume_formatted} tons<br>
     Email: {row['Contact Email']}
     """
+
     folium.Marker(
         location=[row["Latitude"], row["Longitude"]],
         popup=popup_html,

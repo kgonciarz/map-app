@@ -47,11 +47,14 @@ layer = pdk.Layer(
 )
 
 view_state = pdk.ViewState(
-    latitude=0,
+    latitude=10,        # More centered on cocoa-producing countries
     longitude=0,
-    zoom=1.2,
+    zoom=2.2,           # Better zoom level
+    min_zoom=1,
+    max_zoom=5,
     pitch=0
 )
+
 
 tooltip = {
     "html": """

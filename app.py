@@ -32,7 +32,7 @@ role_colors = {
 df["MarkerColor"] = df["Role"].apply(lambda r: role_colors.get(r, "gray"))
 
 # --- Create Folium map centered on cocoa belt ---
-m = folium.Map(location=[5, 0], zoom_start=2, tiles="OpenStreetMap")
+m = folium.Map(location=[10, 0], zoom_start=2, tiles="CartoDB Positron")
 
 legend_html = '''
  <div style="

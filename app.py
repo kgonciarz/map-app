@@ -7,7 +7,9 @@ st.title("🌍 Cocoa Supply Chain Actors Map (Improved)")
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("cocoa_supply_chain.csv")
+    df = pd.read_csv("cocoa_supply_chain.csv")
+    df["Radius"] = df["Volume (tons/year)"] / 1000  # Precompute for pydeck
+    return df
 
 df = load_data()
 
@@ -22,7 +24,7 @@ layer = pdk.Layer(
     "ScatterplotLayer",
     data=filtered_df,
     get_position='[Longitude, Latitude]',
-    get_radius="Volume (tons/year) / 1000",  # Adjust size by volume
+    get_radius="Radius",
     get_fill_color="[200, 30, 0, 160]",
     pickable=True,
 )
@@ -37,8 +39,16 @@ view_state = pdk.ViewState(
 
 # Tooltip
 tooltip = {
-    "html": "<b>{Company}</b><br>{Role}<br>{Country}, {City}<br>Volume: {Volume (tons/year)} tons",
-    "style": {"backgroundColor": "steelblue", "color": "white"}
+    "html": """
+    <b>{Company}</b><br>
+    Role: {Role}<br>
+    Location: {City}, {Country}<br>
+    Volume: {Volume (tons/year)} tons
+    """,
+    "style": {
+        "backgroundColor": "steelblue",
+        "color": "white"
+    }
 }
 
 st.pydeck_chart(pdk.Deck(

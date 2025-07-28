@@ -32,7 +32,25 @@ role_colors = {
 df["MarkerColor"] = df["Role"].apply(lambda r: role_colors.get(r, "gray"))
 
 # --- Create Folium map centered on cocoa belt ---
-m = folium.Map(location=[5, 0], zoom_start=2.5)
+m = folium.Map(location=[5, 0], zoom_start=2, tiles="OpenStreetMap")
+
+legend_html = '''
+ <div style="
+     position: fixed; 
+     bottom: 50px; left: 50px; width: 200px; height: auto; 
+     border:2px solid grey; z-index:9999; font-size:14px;
+     background-color:white; padding: 10px; border-radius: 5px;">
+     <b>🟢 Legend (Role)</b><br>
+     <i style="color: red;">●</i> Processor<br>
+     <i style="color: blue;">●</i> Trader<br>
+     <i style="color: green;">●</i> Trader/Processor<br>
+     <i style="color: orange;">●</i> Broker/Trader<br>
+     <i style="color: purple;">●</i> Origin/Buyer<br>
+     <i style="color: pink;">●</i> Trader/Origin
+ </div>
+'''
+m.get_root().html.add_child(folium.Element(legend_html))
+
 
 marker_cluster = MarkerCluster().add_to(m)
 

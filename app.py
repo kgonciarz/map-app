@@ -70,7 +70,8 @@ st.pydeck_chart(pdk.Deck(
     layers=[layer],
     initial_view_state=view_state,
     tooltip=tooltip
-))
+), height=750)  # Adjust height here
+
 
 # --- Legend ---
 st.markdown("### 🗂️ Role Legend (Point Colors)")

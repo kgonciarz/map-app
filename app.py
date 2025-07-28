@@ -8,47 +8,59 @@ st.title("🌍 Cocoa Supply Chain Actors Map (Improved)")
 @st.cache_data
 def load_data():
     df = pd.read_csv("cocoa_supply_chain.csv")
-    df["Radius"] = df["Volume (tons/year)"] / 1000  # Precompute for pydeck
+    df["Radius"] = df["Volume (tons/year)"] / 1000  # For map sizing
     return df
 
 df = load_data()
 
-# Sidebar filters
-roles = st.sidebar.multiselect("Role", df["Role"].unique(), default=df["Role"].unique())
-min_volume = st.sidebar.slider("Minimum Volume", 0, int(df["Volume (tons/year)"].max()), 0, 5000)
+# --- Sidebar filters ---
+st.sidebar.header("🔍 Filter Companies")
 
-filtered_df = df[(df["Role"].isin(roles)) & (df["Volume (tons/year)"] >= min_volume)]
+roles = st.sidebar.multiselect("Role", df["Role"].unique(), default=list(df["Role"].unique()))
+min_volume = st.sidebar.slider("Minimum Volume (tons/year)", 0, int(df["Volume (tons/year)"].max()), 0, step=10000)
 
-# Map Layer
+# --- Apply filters ---
+filtered_df = df[
+    (df["Role"].isin(roles)) &
+    (df["Volume (tons/year)"] >= min_volume)
+]
+
+# --- Color mapping based on role ---
+role_colors = {
+    "Processor": [255, 0, 0],            # red
+    "Trader": [0, 128, 255],             # blue
+    "Trader/Processor": [0, 200, 0],     # green
+    "Broker/Trader": [255, 165, 0],      # orange
+    "Origin/Buyer": [128, 0, 128],       # purple
+    "Trader/Origin": [255, 0, 255],      # pink
+}
+filtered_df["Color"] = filtered_df["Role"].map(role_colors).fillna([150, 150, 150])
+
+# --- Pydeck map layer ---
 layer = pdk.Layer(
     "ScatterplotLayer",
     data=filtered_df,
     get_position='[Longitude, Latitude]',
     get_radius="Radius",
-    get_fill_color="[200, 30, 0, 160]",
+    get_fill_color="Color",
     pickable=True,
 )
 
-# Map View
 view_state = pdk.ViewState(
     latitude=0,
     longitude=0,
-    zoom=1.3,
+    zoom=1.2,
     pitch=0
 )
 
-# Tooltip
 tooltip = {
     "html": """
     <b>{Company}</b><br>
-    Role: {Role}<br>
-    Location: {City}, {Country}<br>
+    {Role}<br>
+    {City}, {Country}<br>
     Volume: {Volume (tons/year)} tons
     """,
-    "style": {
-        "backgroundColor": "steelblue",
-        "color": "white"
-    }
+    "style": {"backgroundColor": "black", "color": "white"}
 }
 
 st.pydeck_chart(pdk.Deck(
@@ -56,3 +68,12 @@ st.pydeck_chart(pdk.Deck(
     initial_view_state=view_state,
     tooltip=tooltip
 ))
+
+# --- Legend ---
+st.markdown("### 🗂️ Role Legend (Point Colors)")
+for role, color in role_colors.items():
+    st.markdown(f"<span style='color: rgb({color[0]}, {color[1]}, {color[2]});'>●</span> {role}", unsafe_allow_html=True)
+
+# --- Table ---
+st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
+st.dataframe(filtered_df.drop(columns=["Radius", "Color"]))

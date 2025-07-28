@@ -34,7 +34,10 @@ role_colors = {
     "Origin/Buyer": [128, 0, 128],       # purple
     "Trader/Origin": [255, 0, 255],      # pink
 }
-filtered_df["Color"] = filtered_df["Role"].apply(lambda role: role_colors.get(role, [150, 150, 150]))
+filtered_df["Color"] = filtered_df["Role"].apply(
+    lambda role: list(map(int, role_colors.get(role, [150, 150, 150])))
+)
+
 
 # --- Pydeck map layer ---
 layer = pdk.Layer(
@@ -81,7 +84,3 @@ for role, color in role_colors.items():
 # --- Table ---
 st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
 st.dataframe(filtered_df.drop(columns=["Radius", "Color"]))
-
-st.write(f"📊 Filtered companies: {len(filtered_df)}")
-st.write(filtered_df[["Company", "Latitude", "Longitude", "Color", "Radius"]])
-

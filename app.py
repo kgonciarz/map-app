@@ -47,11 +47,11 @@ layer = pdk.Layer(
 )
 
 view_state = pdk.ViewState(
-    latitude=10,        # More centered on cocoa-producing countries
+    latitude=10,         # Center near West Africa
     longitude=0,
-    zoom=2.2,           # Better zoom level
-    min_zoom=1,
-    max_zoom=5,
+    zoom=3.5,            # Tighter zoom
+    min_zoom=2,
+    max_zoom=4.5,        # Restrict zoom-out to prevent infinite wrapping
     pitch=0
 )
 

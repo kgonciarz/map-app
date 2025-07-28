@@ -3,7 +3,7 @@ import pandas as pd
 import pydeck as pdk
 
 st.set_page_config(layout="wide")
-st.title("🌍 Cocoa Supply Chain Actors Map (Improved)")
+st.title("🌍 Cocoa Supply Chain Actors Map")
 
 @st.cache_data
 def load_data():
@@ -81,3 +81,7 @@ for role, color in role_colors.items():
 # --- Table ---
 st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
 st.dataframe(filtered_df.drop(columns=["Radius", "Color"]))
+
+st.write(f"📊 Filtered companies: {len(filtered_df)}")
+st.write(filtered_df[["Company", "Latitude", "Longitude", "Color", "Radius"]])
+

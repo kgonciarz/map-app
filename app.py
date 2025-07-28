@@ -84,13 +84,18 @@ df["Volume (formatted)"] = df["Volume (tons/year)"].apply(
     lambda x: f"{int(x):,}" if pd.notnull(x) and isinstance(x, (int, float)) else x
 )
 
-# --- Table just below the map ---
-st.dataframe(df.drop(columns=["MarkerColor"]), use_container_width=True)
+# --- Add formatted volume column ---
+df["Volume (formatted)"] = df["Volume (tons/year)"].apply(
+    lambda x: f"{int(x):,}" if pd.notnull(x) and isinstance(x, (int, float)) else x
+)
+
+# --- Final clean table with formatted volume ---
 st.dataframe(
     df[[
-        "Company", "Role", "Country", "City", "Contact Email", 
+        "Company", "Role", "Country", "City", "Contact Email",
         "Volume (formatted)", "Latitude", "Longitude", "Notes"
     ]],
     use_container_width=True
 )
+
 

@@ -34,7 +34,7 @@ role_colors = {
     "Origin/Buyer": [128, 0, 128],       # purple
     "Trader/Origin": [255, 0, 255],      # pink
 }
-filtered_df["Color"] = filtered_df["Role"].map(role_colors).fillna([150, 150, 150])
+filtered_df["Color"] = filtered_df["Role"].apply(lambda role: role_colors.get(role, [150, 150, 150]))
 
 # --- Pydeck map layer ---
 layer = pdk.Layer(

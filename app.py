@@ -33,16 +33,31 @@ df["MarkerColor"] = df["Role"].apply(lambda r: role_colors.get(r, "gray"))
 
 # --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Companies")
+
+# Role filter
 available_roles = sorted(df["Role"].unique())
-selected_roles = st.sidebar.multiselect("Select Role(s)", available_roles, default=available_roles)
+role_options = ["All"] + available_roles
+selected_roles = st.sidebar.multiselect("Select Role(s)", role_options, default=["All"])
 
+if "All" in selected_roles or not selected_roles:
+    filtered_roles = available_roles
+else:
+    filtered_roles = selected_roles
+
+# Country filter
 available_countries = sorted(df["Country"].unique())
-selected_countries = st.sidebar.multiselect("Select Country(s)", available_countries, default=available_countries)
+country_options = ["All"] + available_countries
+selected_countries = st.sidebar.multiselect("Select Country(s)", country_options, default=["All"])
 
-# --- Apply filters ---
+if "All" in selected_countries or not selected_countries:
+    filtered_countries = available_countries
+else:
+    filtered_countries = selected_countries
+
+# Apply filters
 filtered_df = df[
-    (df["Role"].isin(selected_roles)) &
-    (df["Country"].isin(selected_countries))
+    (df["Role"].isin(filtered_roles)) &
+    (df["Country"].isin(filtered_countries))
 ]
 
 # --- Create Folium map centered on cocoa belt ---

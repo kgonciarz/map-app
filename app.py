@@ -31,9 +31,24 @@ role_colors = {
 }
 df["MarkerColor"] = df["Role"].apply(lambda r: role_colors.get(r, "gray"))
 
+# --- Sidebar Filters ---
+st.sidebar.header("🔍 Filter Companies")
+available_roles = sorted(df["Role"].unique())
+selected_roles = st.sidebar.multiselect("Select Role(s)", available_roles, default=available_roles)
+
+available_countries = sorted(df["Country"].unique())
+selected_countries = st.sidebar.multiselect("Select Country(s)", available_countries, default=available_countries)
+
+# --- Apply filters ---
+filtered_df = df[
+    (df["Role"].isin(selected_roles)) &
+    (df["Country"].isin(selected_countries))
+]
+
 # --- Create Folium map centered on cocoa belt ---
 m = folium.Map(location=[10, 0], zoom_start=2, tiles="CartoDB Positron")
 
+# --- Legend ---
 legend_html = '''
  <div style="
      position: fixed; 
@@ -51,15 +66,14 @@ legend_html = '''
 '''
 m.get_root().html.add_child(folium.Element(legend_html))
 
-
+# --- Marker cluster ---
 marker_cluster = MarkerCluster().add_to(m)
 
-for _, row in df.iterrows():
-    # Format volume with commas
+for _, row in filtered_df.iterrows():
     try:
         volume_formatted = f"{int(row['Volume (tons/year)']):,}"
     except:
-        volume_formatted = row['Volume (tons/year)']  # fallback if it's not a number
+        volume_formatted = row['Volume (tons/year)']
 
     popup_html = f"""
     <b>{row['Company']}</b><br>
@@ -75,27 +89,22 @@ for _, row in df.iterrows():
         icon=folium.Icon(color=row["MarkerColor"])
     ).add_to(marker_cluster)
 
-# --- Display map with full width ---
+# --- Display map ---
 st_data = st_folium(m, use_container_width=True, height=600)
 
-# --- Spacer to avoid excessive white space ---
+# --- Table Header ---
 st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
-df["Volume (formatted)"] = df["Volume (tons/year)"].apply(
+
+# --- Format volume ---
+filtered_df["Volume (formatted)"] = filtered_df["Volume (tons/year)"].apply(
     lambda x: f"{int(x):,}" if pd.notnull(x) and isinstance(x, (int, float)) else x
 )
 
-# --- Add formatted volume column ---
-df["Volume (formatted)"] = df["Volume (tons/year)"].apply(
-    lambda x: f"{int(x):,}" if pd.notnull(x) and isinstance(x, (int, float)) else x
-)
-
-# --- Final clean table with formatted volume ---
+# --- Display filtered table ---
 st.dataframe(
-    df[[
+    filtered_df[[
         "Company", "Role", "Country", "City", "Contact Email",
         "Volume (formatted)", "Latitude", "Longitude", "Notes"
     ]],
     use_container_width=True
 )
-
-

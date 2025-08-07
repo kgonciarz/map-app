@@ -38,27 +38,33 @@ st.sidebar.header("🔍 Filter Companies")
 available_roles = sorted(df["Role"].unique())
 role_options = ["All"] + available_roles
 selected_roles = st.sidebar.multiselect("Select Role(s)", role_options, default=["All"])
-
-if "All" in selected_roles or not selected_roles:
-    filtered_roles = available_roles
-else:
-    filtered_roles = selected_roles
+filtered_roles = available_roles if "All" in selected_roles or not selected_roles else selected_roles
 
 # Country filter
 available_countries = sorted(df["Country"].unique())
 country_options = ["All"] + available_countries
 selected_countries = st.sidebar.multiselect("Select Country(s)", country_options, default=["All"])
+filtered_countries = available_countries if "All" in selected_countries or not selected_countries else selected_countries
 
-if "All" in selected_countries or not selected_countries:
-    filtered_countries = available_countries
-else:
-    filtered_countries = selected_countries
+# Company name filter
+available_companies = sorted(df["Company"].unique())
+company_options = ["All"] + available_companies
+selected_companies = st.sidebar.multiselect("Select Company(s)", company_options, default=["All"])
+filtered_companies = available_companies if "All" in selected_companies or not selected_companies else selected_companies
+
+# Volume threshold filter
+min_volume = int(df["Volume (tons/year)"].min())
+max_volume = int(df["Volume (tons/year)"].max())
+volume_threshold = st.sidebar.slider("Minimum Volume (tons/year)", min_value=min_volume, max_value=max_volume, value=min_volume, step=10000)
 
 # Apply filters
 filtered_df = df[
     (df["Role"].isin(filtered_roles)) &
-    (df["Country"].isin(filtered_countries))
+    (df["Country"].isin(filtered_countries)) &
+    (df["Company"].isin(filtered_companies)) &
+    (df["Volume (tons/year)"] >= volume_threshold)
 ]
+
 
 # --- Create Folium map centered on cocoa belt ---
 m = folium.Map(location=[10, 0], zoom_start=2, tiles="CartoDB Positron")

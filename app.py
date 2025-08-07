@@ -123,52 +123,61 @@ st.markdown("### 📊 Cocoa Supply Chain Analytics")
 # --- Ensure volume is numeric ---
 filtered_df["Volume (tons/year)"] = pd.to_numeric(filtered_df["Volume (tons/year)"], errors='coerce')
 
-# --- 1. Volume by Role (Bar Chart) ---
+# --- 1. Volume by Role ---
 volume_by_role = (
     filtered_df.groupby("Role")["Volume (tons/year)"]
     .sum()
-    .sort_values(ascending=False)
     .reset_index()
 )
-fig_role = px.bar(
-    volume_by_role,
-    x="Role",
-    y="Volume (tons/year)",
-    title="Total Volume by Role",
-    labels={"Volume (tons/year)": "Volume (tons/year)", "Role": "Role"}
-)
-st.plotly_chart(fig_role, use_container_width=True)
 
-# --- 2. Volume by Country (Pie Chart) ---
+if not volume_by_role.empty and volume_by_role["Volume (tons/year)"].sum() > 0:
+    fig_role = px.bar(
+        volume_by_role,
+        x="Role",
+        y="Volume (tons/year)",
+        title="Total Volume by Role"
+    )
+    st.plotly_chart(fig_role, use_container_width=True)
+else:
+    st.info("No volume data available for selected roles.")
+
+# --- 2. Volume by Country ---
 volume_by_country = (
     filtered_df.groupby("Country")["Volume (tons/year)"]
     .sum()
-    .sort_values(ascending=False)
     .reset_index()
 )
-fig_country = px.pie(
-    volume_by_country,
-    names="Country",
-    values="Volume (tons/year)",
-    title="Volume Distribution by Country"
-)
-st.plotly_chart(fig_country, use_container_width=True)
 
-# --- 3. Top 10 Companies by Volume ---
+if not volume_by_country.empty and volume_by_country["Volume (tons/year)"].sum() > 0:
+    fig_country = px.pie(
+        volume_by_country,
+        names="Country",
+        values="Volume (tons/year)",
+        title="Volume Distribution by Country"
+    )
+    st.plotly_chart(fig_country, use_container_width=True)
+else:
+    st.info("No volume data available for selected countries.")
+
+# --- 3. Top 10 Companies ---
 top_companies = (
     filtered_df[["Company", "Volume (tons/year)"]]
     .dropna()
     .sort_values(by="Volume (tons/year)", ascending=False)
     .head(10)
 )
-fig_top10 = px.bar(
-    top_companies,
-    x="Company",
-    y="Volume (tons/year)",
-    title="Top 10 Companies by Volume",
-    labels={"Volume (tons/year)": "Volume", "Company": "Company"},
-)
-st.plotly_chart(fig_top10, use_container_width=True)
+
+if not top_companies.empty:
+    fig_top10 = px.bar(
+        top_companies,
+        x="Company",
+        y="Volume (tons/year)",
+        title="Top 10 Companies by Volume"
+    )
+    st.plotly_chart(fig_top10, use_container_width=True)
+else:
+    st.info("No companies with volume data in current selection.")
+
 
 
 # --- Table Header ---

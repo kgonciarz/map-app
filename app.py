@@ -116,6 +116,61 @@ for _, row in filtered_df.iterrows():
 # --- Display map ---
 st_data = st_folium(m, use_container_width=True, height=600)
 
+import plotly.express as px
+
+st.markdown("### 📊 Cocoa Supply Chain Analytics")
+
+# --- Ensure volume is numeric ---
+filtered_df["Volume (tons/year)"] = pd.to_numeric(filtered_df["Volume (tons/year)"], errors='coerce')
+
+# --- 1. Volume by Role (Bar Chart) ---
+volume_by_role = (
+    filtered_df.groupby("Role")["Volume (tons/year)"]
+    .sum()
+    .sort_values(ascending=False)
+    .reset_index()
+)
+fig_role = px.bar(
+    volume_by_role,
+    x="Role",
+    y="Volume (tons/year)",
+    title="Total Volume by Role",
+    labels={"Volume (tons/year)": "Volume (tons/year)", "Role": "Role"}
+)
+st.plotly_chart(fig_role, use_container_width=True)
+
+# --- 2. Volume by Country (Pie Chart) ---
+volume_by_country = (
+    filtered_df.groupby("Country")["Volume (tons/year)"]
+    .sum()
+    .sort_values(ascending=False)
+    .reset_index()
+)
+fig_country = px.pie(
+    volume_by_country,
+    names="Country",
+    values="Volume (tons/year)",
+    title="Volume Distribution by Country"
+)
+st.plotly_chart(fig_country, use_container_width=True)
+
+# --- 3. Top 10 Companies by Volume ---
+top_companies = (
+    filtered_df[["Company", "Volume (tons/year)"]]
+    .dropna()
+    .sort_values(by="Volume (tons/year)", ascending=False)
+    .head(10)
+)
+fig_top10 = px.bar(
+    top_companies,
+    x="Company",
+    y="Volume (tons/year)",
+    title="Top 10 Companies by Volume",
+    labels={"Volume (tons/year)": "Volume", "Company": "Company"},
+)
+st.plotly_chart(fig_top10, use_container_width=True)
+
+
 # --- Table Header ---
 st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
 

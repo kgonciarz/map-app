@@ -129,6 +129,7 @@ volume_by_role = (
     .sum()
     .sort_values(ascending=False)
     .reset_index()
+    .head(5)
 )
 fig_role = px.bar(
     volume_by_role,

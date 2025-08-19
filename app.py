@@ -11,7 +11,7 @@ st.write("Real geographic map of cocoa companies with interactive colored marker
 # --- Load Excel data ---
 @st.cache_data
 def load_data():
-    return pd.read_excel("cocoa_supply_chain.xlsx")
+    return pd.read_excel("cocoa_supply_chain (2).xlsx")
 
 df = load_data()
 

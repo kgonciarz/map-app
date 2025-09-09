@@ -14,6 +14,15 @@ def load_data():
     return pd.read_excel("cocoa_supply_chain (2).xlsx")
 
 df = load_data()
+# --- Normalize "Customer Y/N" to Yes/No (blank -> No) ---
+raw = df.get("Customer Y/N")
+df["Customer"] = (
+    raw.astype(str).str.strip().str.lower()
+       .replace({"": "no", "nan": "no"})
+       .map({"y": "Yes", "yes": "Yes", "1": "Yes", "true": "Yes",
+             "n": "No", "no": "No", "0": "No", "false": "No"})
+       .fillna("No")
+)
 
 # --- Clean coordinates ---
 df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
@@ -22,14 +31,13 @@ df.dropna(subset=['Latitude', 'Longitude'], inplace=True)
 
 # --- Role to color mapping ---
 role_colors = {
-    "Processor": "red",
-    "Trader": "blue",
-    "Trader/Processor": "green",
-    "Broker/Trader": "orange",
-    "Origin/Buyer": "purple",
-    "Trader/Origin": "pink",
+    "Exporter/Trader": "blue",
+    "Processor/Manufacturer": "red",
+    "Support & Services": "green",
+    "N/A": "gray",
 }
 df["MarkerColor"] = df["Role"].apply(lambda r: role_colors.get(r, "gray"))
+
 
 # --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Companies")
@@ -76,18 +84,17 @@ m = folium.Map(location=[10, 0], zoom_start=2, tiles="CartoDB Positron")
 legend_html = '''
  <div style="
      position: fixed; 
-     bottom: 50px; left: 50px; width: 200px; height: auto; 
+     bottom: 50px; left: 50px; width: 230px; height: auto; 
      border:2px solid grey; z-index:9999; font-size:14px;
      background-color:white; padding: 10px; border-radius: 5px;">
      <b>🟢 Legend (Role)</b><br>
-     <i style="color: red;">●</i> Processor<br>
-     <i style="color: blue;">●</i> Trader<br>
-     <i style="color: green;">●</i> Trader/Processor<br>
-     <i style="color: orange;">●</i> Broker/Trader<br>
-     <i style="color: purple;">●</i> Origin/Buyer<br>
-     <i style="color: pink;">●</i> Trader/Origin
+     <i style="color: blue;">●</i> Exporter/Trader<br>
+     <i style="color: red;">●</i> Processor/Manufacturer<br>
+     <i style="color: green;">●</i> Support & Services<br>
+     <i style="color: gray;">●</i> N/A
  </div>
 '''
+
 m.get_root().html.add_child(folium.Element(legend_html))
 
 # --- Marker cluster ---
@@ -104,6 +111,7 @@ for _, row in filtered_df.iterrows():
     Role: {row['Role']}<br>
     Location: {row['City']}, {row['Country']}<br>
     Volume: {volume_formatted} tons<br>
+    Customer: {row['Customer']}<br>
     Email: {row['Contact Email']}
     """
 
@@ -171,6 +179,8 @@ fig_top10 = px.bar(
 )
 st.plotly_chart(fig_top10, use_container_width=True)
 
+# ✅ Customer filter (All / Yes / No)
+customer_choice = st.sidebar.radio("Customer?", ["All", "Yes", "No"], index=0)
 
 # --- Table Header ---
 st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
@@ -183,8 +193,9 @@ filtered_df["Volume (formatted)"] = filtered_df["Volume (tons/year)"].apply(
 # --- Display filtered table ---
 st.dataframe(
     filtered_df[[
-        "Company", "Role", "Country", "City", "Contact Email",
+        "Company", "Role", "Country", "City", "Customer", "Contact Email",
         "Volume (formatted)", "Latitude", "Longitude", "Notes"
     ]],
     use_container_width=True
 )
+

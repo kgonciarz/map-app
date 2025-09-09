@@ -14,6 +14,7 @@ def load_data():
     return pd.read_excel("cocoa_supply_chain (2).xlsx")
 
 df = load_data()
+
 # --- Normalize "Customer Y/N" to Yes/No (blank -> No) ---
 if "Customer (Y/N)" in df.columns:
     raw = df["Customer (Y/N)"]
@@ -29,6 +30,7 @@ if "Customer (Y/N)" in df.columns:
     )
 else:
     df["Customer"] = "No"
+
 # --- Clean coordinates ---
 df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
 df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
@@ -42,7 +44,6 @@ role_colors = {
     "N/A": "gray",
 }
 df["MarkerColor"] = df["Role"].apply(lambda r: role_colors.get(r, "gray"))
-
 
 # --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Companies")
@@ -68,6 +69,9 @@ company_options = ["All"] + available_companies
 selected_companies = st.sidebar.multiselect("Select Company(s)", company_options, default=["All"])
 filtered_companies = available_companies if "All" in selected_companies or not selected_companies else selected_companies
 
+# ✅ MOVED: Customer filter goes with the other sidebar controls
+customer_choice = st.sidebar.radio("Customer?", ["All", "Yes", "No"], index=0)  # NEW
+
 # Volume slider (handle only rows with numeric volume)
 volume_min = int(df["Volume (tons/year)"].min(skipna=True))
 volume_max = int(df["Volume (tons/year)"].max(skipna=True))
@@ -79,8 +83,11 @@ filtered_df = df[
     (df["Country"].isin(filtered_countries)) &
     (df["Company"].isin(filtered_companies)) &
     ((df["Volume (tons/year)"].isna()) | (df["Volume (tons/year)"] >= volume_threshold))
-]
+].copy()
 
+# ✅ NEW: actually apply the Customer filter to the selection
+if customer_choice != "All":
+    filtered_df = filtered_df[filtered_df["Customer"] == customer_choice].copy()
 
 # --- Create Folium map centered on cocoa belt ---
 m = folium.Map(location=[10, 0], zoom_start=2, tiles="CartoDB Positron")
@@ -99,7 +106,6 @@ legend_html = '''
      <i style="color: gray;">●</i> N/A
  </div>
 '''
-
 m.get_root().html.add_child(folium.Element(legend_html))
 
 # --- Marker cluster ---
@@ -184,9 +190,6 @@ fig_top10 = px.bar(
 )
 st.plotly_chart(fig_top10, use_container_width=True)
 
-# ✅ Customer filter (All / Yes / No)
-customer_choice = st.sidebar.radio("Customer?", ["All", "Yes", "No"], index=0)
-
 # --- Table Header ---
 st.markdown("### 📋 List of Companies in the Cocoa Supply Chain")
 
@@ -203,4 +206,3 @@ st.dataframe(
     ]],
     use_container_width=True
 )
-

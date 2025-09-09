@@ -15,15 +15,20 @@ def load_data():
 
 df = load_data()
 # --- Normalize "Customer Y/N" to Yes/No (blank -> No) ---
-raw = df.get("Customer Y/N")
-df["Customer"] = (
-    raw.astype(str).str.strip().str.lower()
-       .replace({"": "no", "nan": "no"})
-       .map({"y": "Yes", "yes": "Yes", "1": "Yes", "true": "Yes",
-             "n": "No", "no": "No", "0": "No", "false": "No"})
-       .fillna("No")
-)
-
+if "Customer (Y/N)" in df.columns:
+    raw = df["Customer (Y/N)"]
+    df["Customer"] = (
+        raw.fillna("")
+           .astype(str).str.strip().str.lower()
+           .replace({"": "no", "nan": "no"})
+           .map({
+               "y": "Yes", "yes": "Yes", "1": "Yes", "true": "Yes",
+               "n": "No", "no": "No", "0": "No", "false": "No"
+           })
+           .fillna("No")
+    )
+else:
+    df["Customer"] = "No"
 # --- Clean coordinates ---
 df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
 df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')

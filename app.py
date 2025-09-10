@@ -1,3 +1,5 @@
+from pathlib import Path
+import os
 import streamlit as st
 import pandas as pd
 import folium
@@ -6,6 +8,10 @@ from streamlit_folium import st_folium
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 
+# A small local cache dir (works on Streamlit Cloud; survives reruns, not redeploys)
+CACHE_DIR = Path(".cache")
+CACHE_DIR.mkdir(exist_ok=True)
+GEOCODE_CACHE_PATH = CACHE_DIR / "geocode_cache.csv"
 
 st.set_page_config(layout="wide")
 st.title("🌍 Cocoa Supply Chain Actors Map")

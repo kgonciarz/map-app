@@ -21,7 +21,18 @@ df = load_data()
 @st.cache_resource
 def get_geocoder():
     geolocator = Nominatim(user_agent="cocoa-map-app", timeout=10)
+    # Nominatim usage policy: be gentle; 1 rps
     return RateLimiter(geolocator.geocode, min_delay_seconds=1)
+
+@st.cache_data
+def load_geocode_cache(path: str) -> pd.DataFrame:
+    if os.path.exists(path):
+        return pd.read_csv(path)
+    return pd.DataFrame(columns=["place", "Latitude", "Longitude"])
+
+def save_geocode_cache(df_cache: pd.DataFrame, path: str):
+    df_cache.to_csv(path, index=False)
+
 
 # --- Normalize "Customer Y/N" to Yes/No (blank -> No) ---
 if "Customer (Y/N)" in df.columns:
@@ -40,34 +51,54 @@ else:
     df["Customer"] = "No"
 
 # --- Clean coordinates ---
-# --- Build a location string from City + Country ---
-df["location_str"] = df["City"].astype(str).str.strip() + ", " + df["Country"].astype(str).str.strip()
+# --- Build City, Country key ---
+df["City"] = df.get("City", "").astype(str).str.strip()
+df["Country"] = df.get("Country", "").astype(str).str.strip()
+df["place_key"] = (df["City"] + ", " + df["Country"]).str.replace(r"^,\s*|,\s*$", "", regex=True)
 
-# --- Geocode unique locations ---
-geocode = get_geocoder()
+# --- Load existing geocode cache and attach coords ---
+geo_cache = load_geocode_cache(GEOCODE_CACHE_PATH)
+cache_map = dict(zip(geo_cache["place"], zip(geo_cache["Latitude"], geo_cache["Longitude"])))
+df["Latitude"]  = df["place_key"].map(lambda p: cache_map.get(p, (np.nan, np.nan))[0])
+df["Longitude"] = df["place_key"].map(lambda p: cache_map.get(p, (np.nan, np.nan))[1])
 
-@st.cache_data
-def geocode_locations(locations):
-    results = {}
-    for loc in locations:
-        try:
-            geo = geocode(loc)
-            if geo:
-                results[loc] = (geo.latitude, geo.longitude)
-            else:
-                results[loc] = (None, None)
-        except Exception:
-            results[loc] = (None, None)
-    return results
+st.sidebar.markdown("---")
+st.sidebar.write("📍 Geocoding")
+do_geocode = st.sidebar.button("Geocode missing City + Country")
+show_fast_map = st.sidebar.checkbox("Use fast map (pydeck)", value=False,
+                                    help="Faster for many points; no Folium popups.")
 
-with st.spinner("Geocoding cities… (cached)"):
-    lookup = geocode_locations(df["location_str"].unique())
+if do_geocode:
+    with st.spinner("Geocoding new cities… (cached)"):
+        geocode = get_geocoder()
 
-df["Latitude"]  = df["location_str"].map(lambda x: lookup[x][0])
-df["Longitude"] = df["location_str"].map(lambda x: lookup[x][1])
+        # Only geocode unique places not already cached
+        missing_places = (df.loc[df["Latitude"].isna() | df["Longitude"].isna(), "place_key"]
+                            .dropna().unique().tolist())
+        new_rows = []
+        for p in missing_places:
+            try:
+                loc = geocode(p)
+                if loc:
+                    new_rows.append({"place": p, "Latitude": loc.latitude, "Longitude": loc.longitude})
+                else:
+                    new_rows.append({"place": p, "Latitude": np.nan, "Longitude": np.nan})
+            except Exception:
+                new_rows.append({"place": p, "Latitude": np.nan, "Longitude": np.nan})
 
-# Drop rows where we couldn’t geocode
+        if new_rows:
+            geo_cache = pd.concat([geo_cache, pd.DataFrame(new_rows)], ignore_index=True)\
+                         .drop_duplicates(subset=["place"], keep="last")
+            save_geocode_cache(geo_cache, GEOCODE_CACHE_PATH)
+
+        # Reattach updated cache
+        cache_map = dict(zip(geo_cache["place"], zip(geo_cache["Latitude"], geo_cache["Longitude"])))
+        df["Latitude"]  = df["place_key"].map(lambda p: cache_map.get(p, (np.nan, np.nan))[0])
+        df["Longitude"] = df["place_key"].map(lambda p: cache_map.get(p, (np.nan, np.nan))[1])
+
+# Drop rows we still can't place
 df.dropna(subset=["Latitude", "Longitude"], inplace=True)
+
 
 
 # --- Role to color mapping ---

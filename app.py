@@ -3,6 +3,9 @@ import pandas as pd
 import folium
 from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
+
 
 st.set_page_config(layout="wide")
 st.title("🌍 Cocoa Supply Chain Actors Map")
@@ -14,6 +17,11 @@ def load_data():
     return pd.read_excel("cocoa_supply_chain (2).xlsx")
 
 df = load_data()
+
+@st.cache_resource
+def get_geocoder():
+    geolocator = Nominatim(user_agent="cocoa-map-app", timeout=10)
+    return RateLimiter(geolocator.geocode, min_delay_seconds=1)
 
 # --- Normalize "Customer Y/N" to Yes/No (blank -> No) ---
 if "Customer (Y/N)" in df.columns:
@@ -32,9 +40,35 @@ else:
     df["Customer"] = "No"
 
 # --- Clean coordinates ---
-df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
-df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
-df.dropna(subset=['Latitude', 'Longitude'], inplace=True)
+# --- Build a location string from City + Country ---
+df["location_str"] = df["City"].astype(str).str.strip() + ", " + df["Country"].astype(str).str.strip()
+
+# --- Geocode unique locations ---
+geocode = get_geocoder()
+
+@st.cache_data
+def geocode_locations(locations):
+    results = {}
+    for loc in locations:
+        try:
+            geo = geocode(loc)
+            if geo:
+                results[loc] = (geo.latitude, geo.longitude)
+            else:
+                results[loc] = (None, None)
+        except Exception:
+            results[loc] = (None, None)
+    return results
+
+with st.spinner("Geocoding cities… (cached)"):
+    lookup = geocode_locations(df["location_str"].unique())
+
+df["Latitude"]  = df["location_str"].map(lambda x: lookup[x][0])
+df["Longitude"] = df["location_str"].map(lambda x: lookup[x][1])
+
+# Drop rows where we couldn’t geocode
+df.dropna(subset=["Latitude", "Longitude"], inplace=True)
+
 
 # --- Role to color mapping ---
 role_colors = {
